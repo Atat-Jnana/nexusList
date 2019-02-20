@@ -129,7 +129,7 @@ public class ParseHtmlUtil {
 			subList.set(0, subList.get(0) + "r");
 			//下载jar包到本地maven库
 			try {
-				downloadJarUtil.saveJar(groupId, artifactId, nexusUrl+"/"+subList.get(0));
+//				downloadJarUtil.saveJar(groupId, artifactId, nexusUrl+"/"+subList.get(0)); 
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

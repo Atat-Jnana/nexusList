@@ -1,7 +1,6 @@
 package com.primeton.nexus.nexusList.bean;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * artifact的实体类，存放扩展信息
@@ -10,35 +9,54 @@ import java.util.Map;
  *
  */
 public class Artifact {
-
+	/**
+	 * 扩展的groupId
+	 */
 	private String groupId;
-
+	/**
+	 * 扩展的artifactId
+	 */
 	private String artifactId;
-
+	/**
+	 * 扩展的版本号version
+	 */
 	private String versionCode;
 
-	private List<String> versionList;
-
-	private Map<String, String> artifactPaths;
-
+	/**
+	 * 扩展在本地储存的路径
+	 */
+	private String artifactPaths;
+	/**
+	 * 扩展所在库的Id
+	 */
 	private String repositoryId;
-
+	/**
+	 * 扩展所在库的租Id
+	 */
 	private String repositoryGroupId;
-
-	private String artifactDomain;
-
-	private String artifactApplication;
-
-	private String artifactExtension;
+	/**
+	 * 扩展中所包含的依赖，集合
+	 */
+	private List<?> dependencies;
+	/**
+	 * 扩展的描述性息
+	 */
+	private String description;
 
 	public Artifact() {
 	}
 
-	public Artifact(String groupId, String artifactId, String repositoryId) {
+	public Artifact(String groupId, String artifactId, String versionCode, String artifactPaths, String repositoryId,
+			String repositoryGroupId, List<?> dependencies, String description) {
 		super();
 		this.groupId = groupId;
 		this.artifactId = artifactId;
+		this.versionCode = versionCode;
+		this.artifactPaths = artifactPaths;
 		this.repositoryId = repositoryId;
+		this.repositoryGroupId = repositoryGroupId;
+		this.dependencies = dependencies;
+		this.description = description;
 	}
 
 	public String getGroupId() {
@@ -57,12 +75,20 @@ public class Artifact {
 		this.artifactId = artifactId;
 	}
 
-	public List<String> getVersionList() {
-		return versionList;
+	public String getVersionCode() {
+		return versionCode;
 	}
 
-	public void setVersionList(List<String> versionList) {
-		this.versionList = versionList;
+	public void setVersionCode(String versionCode) {
+		this.versionCode = versionCode;
+	}
+
+	public String getArtifactPaths() {
+		return artifactPaths;
+	}
+
+	public void setArtifactPaths(String artifactPaths) {
+		this.artifactPaths = artifactPaths;
 	}
 
 	public String getRepositoryId() {
@@ -81,52 +107,27 @@ public class Artifact {
 		this.repositoryGroupId = repositoryGroupId;
 	}
 
-	public Map<String, String> getArtifactPaths() {
-		return artifactPaths;
+	public List<?> getDependencies() {
+		return dependencies;
 	}
 
-	public void setArtifactPaths(Map<String, String> artifactPaths) {
-		this.artifactPaths = artifactPaths;
+	public void setDependencies(List<?> dependencies) {
+		this.dependencies = dependencies;
 	}
 
-	public String getArtifactDomain() {
-		return artifactDomain;
+	public String getDescription() {
+		return description;
 	}
 
-	public void setArtifactDomain(String artifactDomain) {
-		this.artifactDomain = artifactDomain;
-	}
-
-	public String getArtifactApplication() {
-		return artifactApplication;
-	}
-
-	public void setArtifactApplication(String artifactApplication) {
-		this.artifactApplication = artifactApplication;
-	}
-
-	public String getArtifactExtension() {
-		return artifactExtension;
-	}
-
-	public void setArtifactExtension(String artifactExtension) {
-		this.artifactExtension = artifactExtension;
-	}
-
-	public String getVersionCode() {
-		return versionCode;
-	}
-
-	public void setVersionCode(String versionCode) {
-		this.versionCode = versionCode;
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	@Override
 	public String toString() {
 		return "Artifact [groupId=" + groupId + ", artifactId=" + artifactId + ", versionCode=" + versionCode
-				+ ", versionList=" + versionList + ", artifactPaths=" + artifactPaths + ", repositoryId=" + repositoryId
-				+ ", repositoryGroupId=" + repositoryGroupId + ", artifactDomain=" + artifactDomain
-				+ ", artifactApplication=" + artifactApplication + ", artifactExtension=" + artifactExtension + "]";
+				+ ", artifactPaths=" + artifactPaths + ", repositoryId=" + repositoryId + ", repositoryGroupId="
+				+ repositoryGroupId + ", dependencies=" + dependencies + ", description=" + description + "]";
 	}
 
 }

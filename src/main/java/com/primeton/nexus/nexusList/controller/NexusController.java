@@ -1,5 +1,6 @@
 package com.primeton.nexus.nexusList.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,9 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.primeton.nexus.nexusList.bean.Artifact;
 import com.primeton.nexus.nexusList.util.ParseHtmlUtil;
+import com.primeton.nexus.nexusList.util.ParseJarUtil;
 
 /**
  * 对nexus进行操作的接口
+ * 
  * @author angw@primeton.com
  *
  */
@@ -22,6 +25,9 @@ public class NexusController {
 
 	@Autowired
 	private ParseHtmlUtil parseHtmlUtil;
+	
+	@Autowired
+	private ParseJarUtil parseJarUtil;
 
 	/**
 	 * @author angw@primmeton.com
@@ -66,5 +72,22 @@ public class NexusController {
 
 		return artifacts;
 
-	}	
+	}
+	@PostMapping("/getSpecificArtifact")
+	public List getSpecificArtifact(@RequestBody Artifact artifact){
+		List result = new ArrayList<>();
+		//先判断前端传来的字段是否完整
+		if(artifact.getGroupId()==null||artifact.getArtifactId()==null||artifact.getVersionCode()==null||artifact.getRepositoryId()==null) {
+			result.add("参数不完整！");
+			return result;
+		}
+		//result中存储有jar包的文件名
+		result = parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId(), artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersionCode());
+		//如果字段虽然完整，但其中有填错的信息
+		if(result.get(0).toString().equals("找不到此版本信息!"))
+			return result;
+		result = parseJarUtil.getJarInfo(artifact, result.get(0).toString());
+		return result;
+		
+	}
 }
