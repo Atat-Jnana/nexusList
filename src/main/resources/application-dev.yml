@@ -1,0 +1,9 @@
+server:
+ port: 9898
+
+nexus:
+  ip: 39.108.14.93
+  port: 9091
+  
+mvn:
+ path: C:\Maven\apache-maven-3.3.9-bin\apache-maven-3.3.9\repository\
