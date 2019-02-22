@@ -64,6 +64,7 @@ public class ParseHtmlUtil {
 	/**
 	 * 通过repositoryId和groupId来获取具体依赖的artifactdId(完成)
 	 * 
+	 * @author angw@primeton.com
 	 * @param repositoryId repositoryId
 	 * @param groupId      groupId
 	 * @return List<String> artifactId
@@ -83,6 +84,7 @@ public class ParseHtmlUtil {
 	/**
 	 * 通过repositoryId+groupId+artifactdId获取依赖所有版本号
 	 * 
+	 * @author angw@primeton.com
 	 * @param repositoryId repositoryId
 	 * @param groupId      groupId
 	 * @param artifactId   artifactId
@@ -110,6 +112,7 @@ public class ParseHtmlUtil {
 	/**
 	 * 根据repositoryId+groupId+artifactId+version获取具体的jar包，并下载到本地
 	 * 
+	 * @author angw@primeton.com
 	 * @param repositoryId repositoId
 	 * @param groupId      groupId
 	 * @param artifactId   artifactId
@@ -141,7 +144,7 @@ public class ParseHtmlUtil {
 
 	/**
 	 * 拼接后的url进行检索
-	 * 
+	 * @author angw@primeton.com
 	 * @param url url
 	 * @return
 	 */
