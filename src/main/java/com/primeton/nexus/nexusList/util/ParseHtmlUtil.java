@@ -43,8 +43,10 @@ public class ParseHtmlUtil {
 	 */
 	public List parseHtmlBody(String repositoryId) {
 
-		nexusUrl = String.format("http://%s:%s/nexus/content/repositories/%s/", nexusIp,nexusPort,repositoryId);
+		nexusUrl = String.format("http://%s:%s/nexus/content/repositories/%s/", nexusIp, nexusPort, repositoryId);
+
 		List jarList = getList(nexusUrl);
+
 		if (!jarList.get(0).equals("找不到此版本信息!")) {
 			jarList.remove(0);
 		}

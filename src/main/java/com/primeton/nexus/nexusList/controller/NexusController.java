@@ -17,6 +17,7 @@ import com.primeton.nexus.nexusList.bean.Artifact;
 import com.primeton.nexus.nexusList.util.ExcuteMavenUtil;
 import com.primeton.nexus.nexusList.util.ParseHtmlUtil;
 import com.primeton.nexus.nexusList.util.ParseJarUtil;
+import com.primeton.nexus.nexusList.util.ParsePomUtil;
 
 /**
  * 对nexus进行操作的接口
@@ -37,6 +38,9 @@ public class NexusController {
 
 	@Autowired
 	private ExcuteMavenUtil excuteMavenUtil;
+	
+	@Autowired 
+	private ParsePomUtil parsePomUtil;
 
 	/**
 	 * 通过repositoryId查询其下的所有artifact
@@ -128,7 +132,7 @@ public class NexusController {
 	 */
 	@PostMapping("/getDependency")
 	public List getDependencyFromPom(@RequestParam String pomPath) {
-		List<Object> jarInfo = parseJarUtil.getJarInfo(pomPath);
+		List<Object> jarInfo = parsePomUtil.getJarInfo(pomPath);
 		return jarInfo;
 	}
 
@@ -143,7 +147,7 @@ public class NexusController {
 	@PostMapping("/addMoudle")
 	public String addModuleToPom(@RequestParam String pomPath, @RequestParam String moduleName) {
 		String result = "添加失败!";
-		result = parseJarUtil.addMoudle(pomPath, moduleName);
+		result = parsePomUtil.addMoudle(pomPath, moduleName);
 		return result;
 	}
 
@@ -157,7 +161,7 @@ public class NexusController {
 	@PostMapping("/addDependency")
 	public String addDependencyToPom(@RequestBody HashMap<Object, Object> pom_artifact) {
 		String result = "添加失败！";
-		result = parseJarUtil.addDependency(pom_artifact);
+		result = parsePomUtil.addDependency(pom_artifact);
 		return result;
 	}
 
@@ -171,7 +175,7 @@ public class NexusController {
 	@PostMapping("/updateDependency")
 	public String updateDependencyToPom(@RequestBody HashMap<Object, Object> pom_artifact) {
 		String result = "修改失败!";
-		result = parseJarUtil.updateDependency(pom_artifact);
+		result = parsePomUtil.updateDependency(pom_artifact);
 		return result;
 	}
 
