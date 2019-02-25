@@ -34,11 +34,13 @@ public class NexusController {
 
 	@Autowired
 	private ParseJarUtil parseJarUtil;
-	
+
 	@Autowired
 	private ExcuteMavenUtil excuteMavenUtil;
 
 	/**
+	 * 通过repositoryId查询其下的所有artifact
+	 * 
 	 * @author angw@primmeton.com
 	 * @param artifact 前端传来的artifact实体类
 	 * @return List<String> repository中已有的扩展名称列表
@@ -58,20 +60,25 @@ public class NexusController {
 	@PostMapping("/getByCondition")
 	public List<?> getArtifactByCondition(@RequestBody Artifact artifact) {
 		List<?> artifacts = null;
-		// 通过repositoryId+groupId获取所有artifactId(通过)
+		//通过repositoryId获取库中所有扩展
+		if(artifact.getRepositoryId()!=null&&artifact.getGroupId()== null && artifact.getArtifactId() == null
+				&& artifact.getVersionCode() == null) {
+			artifacts = parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId());
+		}
+		// 通过repositoryId+groupId获取所有artifactId
 		if (artifact.getRepositoryId() != null && artifact.getGroupId() != null && artifact.getArtifactId() == null
 				&& artifact.getVersionCode() == null) {
 			artifacts = parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId(), artifact.getGroupId());
 			return artifacts;
 		}
-		// repositoryId+groupId+artifactId获取所有version(通过)
+		// repositoryId+groupId+artifactId获取所有version
 		if (artifact.getRepositoryId() != null && artifact.getGroupId() != null && artifact.getArtifactId() != null
 				&& artifact.getVersionCode() == null) {
 			artifacts = parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId(), artifact.getGroupId(),
 					artifact.getArtifactId());
 			return artifacts;
 		}
-		// repositoryId+groupId+artifactId+version获取具体jar包（通过）
+		// repositoryId+groupId+artifactId+version获取具体jar包
 		if (artifact.getRepositoryId() != null && artifact.getGroupId() != null && artifact.getArtifactId() != null
 				&& artifact.getVersionCode() != null) {
 			artifacts = parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId(), artifact.getGroupId(),
@@ -139,10 +146,10 @@ public class NexusController {
 		result = parseJarUtil.addMoudle(pomPath, moduleName);
 		return result;
 	}
-	
 
 	/**
 	 * 往指定pom.xml中添加<dependency>
+	 * 
 	 * @author angw@primeton.com
 	 * @param pom_artifact 携带groupId,artifactId,version,pom文件路径的HashMap
 	 * @return String
@@ -153,8 +160,10 @@ public class NexusController {
 		result = parseJarUtil.addDependency(pom_artifact);
 		return result;
 	}
+
 	/**
 	 * 在给定路径的pom.xml中修改<dependency>的信息
+	 * 
 	 * @author angw@primeton.com
 	 * @param pom_artifact 携带groupId,artifactId,version,pom文件路径的HashMap
 	 * @return String
@@ -165,8 +174,10 @@ public class NexusController {
 		result = parseJarUtil.updateDependency(pom_artifact);
 		return result;
 	}
+
 	/**
 	 * 通过给定的pom文件路径，运行maven命令对其进行编译
+	 * 
 	 * @author angw@primeton.com
 	 * @param pomPath pomPath
 	 * @return String
@@ -176,6 +187,6 @@ public class NexusController {
 		String result = "编译失败!";
 		result = excuteMavenUtil.mavenCompile(pomPath);
 		return result;
-		
+
 	}
 }

@@ -2,7 +2,6 @@ package com.primeton.nexus.nexusList.util;
 
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -10,13 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
-import org.omg.CORBA.PUBLIC_MEMBER;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -46,11 +44,6 @@ public class ParseJarUtil {
 	@Value("${nexus.port}")
 	private String nexusPort;
 	/**
-	 * 下载jar包所用的工具类
-	 */
-	@Autowired
-	private DownloadJarUtil downloadJarUtil;
-	/**
 	 * 用于解析pom文件的一个 实例对象
 	 */
 	private MavenXpp3Reader reader = null;
@@ -77,7 +70,7 @@ public class ParseJarUtil {
 			}
 			// 将相关的依赖放入result集合中作为结果返回（按照名称排除第三方的jar包）
 			for (Dependency dependency : dependencies) {
-				if (dependency.getGroupId().startsWith("com")) {
+				if (dependency.getGroupId().contains("spring")) {
 					result.add(dependency);
 				}
 			}
@@ -86,13 +79,7 @@ public class ParseJarUtil {
 			result.add("系統找不到指定文件！");
 			e.printStackTrace();
 		} finally {
-			if (openStream != null) {
-				try {
-					openStream.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+			IOUtils.closeQuietly(openStream);
 		}
 
 		return result;
@@ -129,7 +116,6 @@ public class ParseJarUtil {
 
 		} catch (Exception e) {
 			result.add("jar包不完整！");
-			return result;
 		}
 		return result;
 	}
@@ -143,7 +129,8 @@ public class ParseJarUtil {
 	 * @return
 	 */
 	public String addMoudle(String pomPath, String moudleName) {
-		FileWriter writer2 = null;
+		String result = "添加成功!";
+		FileWriter pomFile = null;
 		try {
 			reader = new MavenXpp3Reader();
 			writer = new MavenXpp3Writer();
@@ -155,26 +142,19 @@ public class ParseJarUtil {
 			}
 			modules.add(moudleName);
 			model.setModules(modules);
-			writer2 = new FileWriter(pomPath.replace("\\", "/"));
-			writer.write(writer2, model);
+			pomFile = new FileWriter(pomPath.replace("\\", "/"));
+			writer.write(pomFile, model);
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			return "系统找不到指定路径！";
+			result = "系统找不到指定路径！";
 		} catch (Exception e) {
 			e.printStackTrace();
-			return "添加失败";
+			result = "添加失败";
 		} finally {
-
-			if (writer2 != null) {
-				try {
-					writer2.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+			IOUtils.closeQuietly(pomFile);
 		}
-		return "添加成功！";
+		return "result";
 	}
 
 	/**
@@ -185,7 +165,8 @@ public class ParseJarUtil {
 	 * @return
 	 */
 	public String addDependency(HashMap<Object, Object> param) {
-		FileWriter writer2 = null;
+		String result = "添加成功!";
+		FileWriter pomFile = null;
 		try {
 			reader = new MavenXpp3Reader();
 			writer = new MavenXpp3Writer();
@@ -208,35 +189,30 @@ public class ParseJarUtil {
 
 			model.setDependencies(dependencies);
 
-			writer2 = new FileWriter(param.get("pomPath").toString().replace("\\", "/"));
-			writer.write(writer2, model);
+			pomFile = new FileWriter(param.get("pomPath").toString().replace("\\", "/"));
+			writer.write(pomFile, model);
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			return "系统找不到指定路径";
+			result = "系统找不到指定路径";
 		} catch (Exception e) {
 			e.printStackTrace();
-			return "添加失败";
+			result = "添加失败";
 		} finally {
-
-			if (writer2 != null) {
-				try {
-					writer2.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+			IOUtils.closeQuietly(pomFile);
 		}
-		return "添加成功！";
+		return result;
 	}
 	/**
+	 * 在指定pom文件中找到并修改对应依赖的a,v
 	 * @author angw@primmeton.com
 	 * @param param param 携带g a v 和pom文件路径的的HashMap
 	 * @return String
 	 */
 	public String updateDependency(HashMap<Object, Object> param) {
+		String result = "修改成功!";
 		boolean containDependency = false;
-		FileWriter writer2 = null;
+		FileWriter pomFile = null;
 		try {
 			reader = new MavenXpp3Reader();
 			writer = new MavenXpp3Writer();
@@ -252,30 +228,24 @@ public class ParseJarUtil {
 					dependency.setVersion(param.get("versionCode").toString());
 				}
 			}
-			if(containDependency==false)
-				return "pom中不包含所需的dependency！";
-			
+			if(containDependency==false) {
+				result = "pom中不包含所需的dependency！";
+				return result;
+			}
 			model.setDependencies(dependencies);
 
-			writer2 = new FileWriter(param.get("pomPath").toString().replace("\\", "/"));
-			writer.write(writer2, model);
+			pomFile = new FileWriter(param.get("pomPath").toString().replace("\\", "/"));
+			writer.write(pomFile, model);
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			return "系统找不到指定路径";
+			result = "系统找不到指定路径";
 		} catch (Exception e) {
 			e.printStackTrace();
-			return "修改失败";
+			result = "修改失败"; 
 		} finally {
-
-			if (writer2 != null) {
-				try {
-					writer2.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+			IOUtils.closeQuietly(pomFile);
 		}
-		return "修改成功！";
+		return result;
 	}
 }

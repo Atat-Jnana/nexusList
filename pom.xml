@@ -66,6 +66,12 @@
 			<artifactId>spring-boot-devtools</artifactId>
 			<optional>true</optional><!-- optional配置为true -->
 		</dependency>
+		<dependency>
+    <groupId>commons-io</groupId>
+    <artifactId>commons-io</artifactId>
+    <version>2.4</version>
+</dependency>
+		
 	</dependencies>
 
 	<build>

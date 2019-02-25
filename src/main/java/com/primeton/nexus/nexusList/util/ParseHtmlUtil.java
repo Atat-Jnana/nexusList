@@ -1,7 +1,6 @@
 package com.primeton.nexus.nexusList.util;
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +8,6 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -19,9 +17,8 @@ import org.springframework.stereotype.Component;
  * @author angw@priemton.com
  *
  */
-
-@Component
 @SuppressWarnings("all")
+@Component
 public class ParseHtmlUtil {
 	/**
 	 * nexus服务所在ip地址（从配置文件中读取）
@@ -36,13 +33,7 @@ public class ParseHtmlUtil {
 	/**
 	 * 用于拼接url的字符串
 	 */
-	private static String nexusUrl = null;
-	
-	/**
-	 * 用于下载jar包的工具类对象实例
-	 */
-	@Autowired
-	private DownloadJarUtil downloadJarUtil;
+	private String nexusUrl = null;
 
 	/**
 	 * 通过repositoryId，获取到具体库中所有依赖的groupId和artifactId 是一种迭代的方式（未完成）
@@ -50,19 +41,19 @@ public class ParseHtmlUtil {
 	 * @author angw@primeton.com
 	 * @return List<String> 目标repository中现存的扩展名称列表
 	 */
-	public List<String> parseHtmlBody(String repositoryId) {
+	public List parseHtmlBody(String repositoryId) {
 
-		nexusUrl = "http://" + nexusIp + ":" + nexusPort + "/nexus/content/repositories/" + repositoryId + "/";
-
-		List<?> jarList = getList(nexusUrl);
-		if (!jarList.get(0).equals("找不到此版本信息!"))
+		nexusUrl = String.format("http://%s:%s/nexus/content/repositories/%s/", nexusIp,nexusPort,repositoryId);
+		List jarList = getList(nexusUrl);
+		if (!jarList.get(0).equals("找不到此版本信息!")) {
 			jarList.remove(0);
+		}
 		jarList.remove(jarList.size() - 1);
-		return (List<String>) jarList;
+		return jarList;
 	}
 
 	/**
-	 * 通过repositoryId和groupId来获取具体依赖的artifactdId(完成)
+	 * 通过repositoryId和groupId来获取具体依赖的artifactdId
 	 * 
 	 * @author angw@primeton.com
 	 * @param repositoryId repositoryId
@@ -72,8 +63,10 @@ public class ParseHtmlUtil {
 	public List<String> parseHtmlBody(String repositoryId, String groupId) {
 
 		String groupIdPath = groupId.replace(".", "/");
-		nexusUrl = "http://" + nexusIp + ":" + nexusPort + "/nexus/content/repositories/" + repositoryId + "/"
-				+ groupIdPath;
+
+		nexusUrl = String.format("http://%s:%s/nexus/content/repositories/%s/%s", nexusIp, nexusPort, repositoryId,
+				groupIdPath);
+
 		List<?> jarList = getList(nexusUrl);
 		if (!jarList.get(0).equals("找不到此版本信息!")) {
 			jarList.remove(0);
@@ -93,8 +86,8 @@ public class ParseHtmlUtil {
 	public List<String> parseHtmlBody(String repositoryId, String groupId, String artifactId) {
 
 		String groupIdPath = groupId.replace(".", "/");
-		nexusUrl = "http://" + nexusIp + ":" + nexusPort + "/nexus/content/repositories/" + repositoryId + "/"
-				+ groupIdPath + "/" + artifactId;
+		nexusUrl = String.format("http://%s:%s/nexus/content/repositories/%s/%s/%s", nexusIp, nexusPort, repositoryId,
+				groupIdPath, artifactId);
 
 		List<?> jarList = getList(nexusUrl);
 		if (!jarList.get(0).equals("找不到此版本信息!")) {
@@ -110,7 +103,7 @@ public class ParseHtmlUtil {
 	}
 
 	/**
-	 * 根据repositoryId+groupId+artifactId+version获取具体的jar包，并下载到本地
+	 * 根据repositoryId+groupId+artifactId+version获取具体的jar包
 	 * 
 	 * @author angw@primeton.com
 	 * @param repositoryId repositoId
@@ -122,20 +115,14 @@ public class ParseHtmlUtil {
 	public List<String> parseHtmlBody(String repositoryId, String groupId, String artifactId, String version) {
 
 		String groupIdPath = groupId.replace(".", "/");
-		nexusUrl = "http://" + nexusIp + ":" + nexusPort + "/nexus/content/repositories/" + repositoryId + "/"
-				+ groupIdPath + "/" + artifactId + "/" + version;
+		nexusUrl = String.format("http://%s:%s/nexus/content/repositories/%s/%s/%s/%s", nexusIp, nexusPort,
+				repositoryId, groupIdPath, artifactId, version);
 
 		List<?> jarList = getList(nexusUrl);
 		if (!jarList.get(0).equals("找不到此版本信息!")) {
 			jarList.remove(0);
 			List<String> subList = (List<String>) jarList.subList(0, 1);
 			subList.set(0, subList.get(0) + "r");
-			//下载jar包到本地maven库
-			try {
-//				downloadJarUtil.saveJar(groupId, artifactId, nexusUrl+"/"+subList.get(0)); 
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
 			return subList;
 		}
 
@@ -144,6 +131,7 @@ public class ParseHtmlUtil {
 
 	/**
 	 * 拼接后的url进行检索
+	 * 
 	 * @author angw@primeton.com
 	 * @param url url
 	 * @return
@@ -154,16 +142,14 @@ public class ParseHtmlUtil {
 		List<String> jarList = new ArrayList<>();
 		try {
 			document = connect.get();
+			Elements elements = document.select("a[href]");
+			for (org.jsoup.nodes.Element element : elements) {
+				String jarHtml = element.toString();
+				String jarName = jarHtml.substring(jarHtml.indexOf("\">") + 2, jarHtml.indexOf("</a>") - 1);
+				jarList.add(jarName);
+			}
 		} catch (IOException e) {
-			ArrayList<String> error = new ArrayList<>();
-			error.add("找不到此版本信息!");
-			return error;
-		}
-		Elements elements = document.select("a[href]");
-		for (org.jsoup.nodes.Element element : elements) {
-			String jarHtml = element.toString();
-			String jarName = jarHtml.substring(jarHtml.indexOf("\">") + 2, jarHtml.indexOf("</a>") - 1);
-			jarList.add(jarName);
+			jarList.add("找不到此版本信息!");
 		}
 		return jarList;
 	}
