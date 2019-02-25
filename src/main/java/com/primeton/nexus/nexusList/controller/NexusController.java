@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.primeton.nexus.nexusList.bean.Artifact;
+import com.primeton.nexus.nexusList.util.ExcuteMavenUtil;
 import com.primeton.nexus.nexusList.util.ParseHtmlUtil;
 import com.primeton.nexus.nexusList.util.ParseJarUtil;
 
@@ -33,6 +34,9 @@ public class NexusController {
 
 	@Autowired
 	private ParseJarUtil parseJarUtil;
+	
+	@Autowired
+	private ExcuteMavenUtil excuteMavenUtil;
 
 	/**
 	 * @author angw@primmeton.com
@@ -135,6 +139,7 @@ public class NexusController {
 		result = parseJarUtil.addMoudle(pomPath, moduleName);
 		return result;
 	}
+	
 
 	/**
 	 * 往指定pom.xml中添加<dependency>
@@ -159,5 +164,17 @@ public class NexusController {
 		String result = "修改失败!";
 		result = parseJarUtil.updateDependency(pom_artifact);
 		return result;
+	}
+	/**
+	 * 通过指定的g a v去本地maven库中找到
+	 * @param pomPath
+	 * @return
+	 */
+	@PostMapping("/compilePom")
+	public String excuteMavenCompile(@RequestBody String pomPath) {
+		String result = "编译失败!";
+		result = excuteMavenUtil.mavenCompile(pomPath);
+		return "编译失败!";
+		
 	}
 }
