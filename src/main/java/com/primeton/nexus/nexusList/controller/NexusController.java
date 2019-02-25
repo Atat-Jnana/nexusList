@@ -166,15 +166,16 @@ public class NexusController {
 		return result;
 	}
 	/**
-	 * 通过指定的g a v去本地maven库中找到
-	 * @param pomPath
-	 * @return
+	 * 通过给定的pom文件路径，运行maven命令对其进行编译
+	 * @author angw@primeton.com
+	 * @param pomPath pomPath
+	 * @return String
 	 */
 	@PostMapping("/compilePom")
-	public String excuteMavenCompile(@RequestBody String pomPath) {
+	public String excuteMavenCompile(@RequestParam String pomPath) {
 		String result = "编译失败!";
 		result = excuteMavenUtil.mavenCompile(pomPath);
-		return "编译失败!";
+		return result;
 		
 	}
 }

@@ -78,23 +78,18 @@ public class ParseJarUtil {
 			// 将相关的依赖放入result集合中作为结果返回（按照名称排除第三方的jar包）
 			for (Dependency dependency : dependencies) {
 				if (dependency.getGroupId().startsWith("com")) {
-					// 下载相关的jar包（通过url拼接连接，这种方式最好不用。试试maven原生的方式）
-//					String nexusUrl = "http://" + nexusIp + ":" + nexusPort + "/nexus/content/repositories/" + repositoryId + "/"
-//							+ dependency.getGroupId().replace(".", "/") + "/" + dependency.getArtifactId() + "/" + dependency.getVersion();
-//					downloadJarUtil.saveJar(dependency.getGroupId(), dependency.getArtifactId(), nexusUrl);
 					result.add(dependency);
-
-//				}
 				}
 			}
+			
 		} catch (Exception e) {
+			result.add("系統找不到指定文件！");
 			e.printStackTrace();
 		} finally {
 			if (openStream != null) {
 				try {
 					openStream.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}

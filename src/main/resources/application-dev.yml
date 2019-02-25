@@ -6,4 +6,5 @@ nexus:
   port: 9091
   
 mvn:
- path: C:\Maven\apache-maven-3.3.9-bin\apache-maven-3.3.9\repository\
+ path: D:\devEnv\repository
+ home: D:\devEnv\apache-maven-3.6.0
