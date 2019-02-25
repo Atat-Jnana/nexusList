@@ -1,2 +1,10 @@
 server:
  port: 9898
+
+nexus:
+  ip: 39.108.14.93
+  port: 9091
+  
+mvn:
+ path: D:\devEnv\repository
+ home: D:\devEnv\apache-maven-3.6.0

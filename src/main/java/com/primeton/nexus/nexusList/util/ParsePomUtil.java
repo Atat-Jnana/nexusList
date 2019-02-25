@@ -1,9 +1,9 @@
 package com.primeton.nexus.nexusList.util;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,8 +55,9 @@ public class ParsePomUtil {
 		try {
 
 			reader = new MavenXpp3Reader();
-			URL url = new URL("file:///" + pomPath.replace("\\", "/"));
-			openStream = url.openStream();
+			
+			openStream = new FileInputStream(pomPath.replace("\\", "/"));
+			
 			Model model = reader.read(openStream);
 			// 获取pom中包含依赖的List集合
 			List<Dependency> dependencies = model.getDependencies();
@@ -93,11 +94,12 @@ public class ParsePomUtil {
 	public String addMoudle(String pomPath, String moudleName) {
 		String result = "添加成功!";
 		FileWriter pomFile = null;
+		FileInputStream fis = null;
 		try {
 			reader = new MavenXpp3Reader();
 			writer = new MavenXpp3Writer();
-			URL url = new URL("file:///" + pomPath.replace("\\", "/"));
-			Model model = reader.read(url.openStream());
+			fis = new FileInputStream(pomPath.replace("\\", "/"));
+			Model model = reader.read(fis);
 			List<String> modules = model.getModules();
 			if (modules.contains(moudleName)) {
 				return "已存在名为：" + moudleName + "的module！";
@@ -115,6 +117,7 @@ public class ParsePomUtil {
 			result = "添加失败";
 		} finally {
 			IOUtils.closeQuietly(pomFile);
+			IOUtils.closeQuietly(fis);
 		}
 		return "result";
 	}
@@ -129,12 +132,13 @@ public class ParsePomUtil {
 	public String addDependency(HashMap<Object, Object> param) {
 		String result = "添加成功!";
 		FileWriter pomFile = null;
+		FileInputStream fis = null;
 		try {
 			reader = new MavenXpp3Reader();
 			writer = new MavenXpp3Writer();
 
-			URL url = new URL("file:///" + param.get("pomPath").toString().replace("\\", "/"));
-			Model model = reader.read(url.openStream());
+			fis = new FileInputStream(param.get("pomPath").toString().replace("\\", "/"));
+			Model model = reader.read(fis);
 			List<Dependency> dependencies = model.getDependencies();
 			// 先检索pom.xml中是否已经存在这一个依赖,如果存在，返回提示信息
 			for (Dependency dependency : dependencies) {
@@ -162,6 +166,7 @@ public class ParsePomUtil {
 			result = "添加失败";
 		} finally {
 			IOUtils.closeQuietly(pomFile);
+			IOUtils.closeQuietly(fis);
 		}
 		return result;
 	}
@@ -177,12 +182,12 @@ public class ParsePomUtil {
 		String result = "修改成功!";
 		boolean containDependency = false;
 		FileWriter pomFile = null;
+		FileInputStream fis = null;
 		try {
 			reader = new MavenXpp3Reader();
 			writer = new MavenXpp3Writer();
-
-			URL url = new URL("file:///" + param.get("pomPath").toString().replace("\\", "/"));
-			Model model = reader.read(url.openStream());
+			fis = new FileInputStream(param.get("pomPath").toString().replace("\\", "/"));
+			Model model = reader.read(fis);
 			List<Dependency> dependencies = model.getDependencies();
 			// 在pom文件中搜索要修改的那一条<dependency>
 			for (Dependency dependency : dependencies) {
@@ -192,6 +197,7 @@ public class ParsePomUtil {
 					dependency.setVersion(param.get("versionCode").toString());
 				}
 			}
+		   
 			if (containDependency == false) {
 				result = "pom中不包含所需的dependency！";
 				return result;
@@ -209,6 +215,7 @@ public class ParsePomUtil {
 			result = "修改失败";
 		} finally {
 			IOUtils.closeQuietly(pomFile);
+			IOUtils.closeQuietly(fis);
 		}
 		return result;
 	}

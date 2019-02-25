@@ -8,7 +8,6 @@ import java.util.Map;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -41,10 +40,6 @@ public class ParseJarUtil {
 	 * 用于解析pom文件的一个 实例对象
 	 */
 	private MavenXpp3Reader reader = null;
-	/**
-	 * 用于写入内容到pom.xml的对象
-	 */
-	private MavenXpp3Writer writer = null;
 
 	
 
