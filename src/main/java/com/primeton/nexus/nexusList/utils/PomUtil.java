@@ -1,19 +1,21 @@
-package com.primeton.nexus.nexusList.util;
+package com.primeton.nexus.nexusList.utils;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +26,9 @@ import org.springframework.stereotype.Component;
  *
  */
 @Component
-public class ParsePomUtil {
+public class PomUtil {
+	
+	private Logger logger = LoggerFactory.getLogger(PomUtil.class);
 	/**
 	 * 本地maven库的路径
 	 */
@@ -40,25 +44,31 @@ public class ParsePomUtil {
 	 */
 	@Value("${nexus.port}")
 	private String nexusPort;
-	/**
-	 * 用于解析pom文件的一个 实例对象
-	 */
-	private MavenXpp3Reader reader = null;
-	/**
-	 * 用于写入内容到pom.xml的对象
-	 */
-	private MavenXpp3Writer writer = null;
 
-	public List<Object> getJarInfo(String pomPath) {
-		List<Object> result = new ArrayList<>();
-		InputStream openStream = null;
+	/**
+	 * 根据pom文件路径，解析pom中的依赖列表。
+	 * @param pomFilePath
+	 * @return
+	 */
+	public List<Dependency> getAllDependenciesFromPom(String pomFilePath) {
+		logger.debug("start invoke PomUtil.getAllDependenciesFromPom");
+		if(StringUtils.isBlank(pomFilePath)) {
+			String msg = "the pom file path is null!";
+			logger.error(msg);
+			throw new RuntimeException(msg);  
+		}
+		
+		MavenXpp3Reader reader = null;
+		
+		List<Dependency> result = new ArrayList<>();
+		InputStream fis = null;
 		try {
 
 			reader = new MavenXpp3Reader();
-			
-			openStream = new FileInputStream(pomPath.replace("\\", "/"));
-			
-			Model model = reader.read(openStream);
+
+			fis = new FileInputStream(pomFilePath.replace("\\", "/"));
+
+			Model model = reader.read(fis);
 			// 获取pom中包含依赖的List集合
 			List<Dependency> dependencies = model.getDependencies();
 			DependencyManagement dependencyManagement = model.getDependencyManagement();
@@ -74,10 +84,11 @@ public class ParsePomUtil {
 			}
 
 		} catch (Exception e) {
-			result.add("系統找不到指定文件！");
-			e.printStackTrace();
+			String msg = String.format("File Not Found %s!", e.getMessage());
+			logger.error(msg);
 		} finally {
-			IOUtils.closeQuietly(openStream);
+			IOUtils.closeQuietly(fis);
+			logger.debug("finish invoke PomUtil.getAllDependenciesFromPom");
 		}
 
 		return result;
@@ -87,39 +98,55 @@ public class ParsePomUtil {
 	 * 在总工程下的pom.xml文件中添加module
 	 * 
 	 * @author angw@primeton.com
-	 * @param pomPath    pom文件路径
-	 * @param moudleName 所添加Moudle的名称
-	 * @return
+	 * @param pomFilePath    pom文件路径
+	 * @param moduleName 所添加Moudle的名称
+	 * @return int   1:找不到文件   2:pom中已存在该module  0:添加成功
 	 */
-	public String addMoudle(String pomPath, String moudleName) {
-		String result = "添加成功!";
+	public int addModuleToPom(String pomFilePath, String moduleName) {
+		logger.debug("start invoke PomUtil.addModuleToPom");
+		int result = 0;
+		if(StringUtils.isBlank(pomFilePath)) {
+			String msg = "the pom file path is null!";
+			logger.error(msg);
+			throw new RuntimeException(msg);  
+		}
+		if(StringUtils.isBlank(moduleName)) {
+			String msg = "the module name is null!";
+			logger.error(msg);
+			throw new RuntimeException(msg);  
+		}
+		
 		FileWriter pomFile = null;
 		FileInputStream fis = null;
+		
+		MavenXpp3Reader reader = null;
+		MavenXpp3Writer writer = null;
+		
 		try {
 			reader = new MavenXpp3Reader();
 			writer = new MavenXpp3Writer();
-			fis = new FileInputStream(pomPath.replace("\\", "/"));
+			fis = new FileInputStream(pomFilePath.replace("\\", "/"));
 			Model model = reader.read(fis);
 			List<String> modules = model.getModules();
-			if (modules.contains(moudleName)) {
-				return "已存在名为：" + moudleName + "的module！";
+			if (modules.contains(moduleName)) {
+				logger.info("module already exists in pom!");
+				return 2;
 			}
-			modules.add(moudleName);
+			modules.add(moduleName);
 			model.setModules(modules);
-			pomFile = new FileWriter(pomPath.replace("\\", "/"));
+			pomFile = new FileWriter(pomFilePath.replace("\\", "/"));
 			writer.write(pomFile, model);
 
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			result = "系统找不到指定路径！";
 		} catch (Exception e) {
-			e.printStackTrace();
-			result = "添加失败";
+			String msg = String.format("File Not Found %s!", e.getMessage());
+			logger.error(msg);
+			result = 1;
 		} finally {
 			IOUtils.closeQuietly(pomFile);
 			IOUtils.closeQuietly(fis);
+			logger.debug("finish invoke PomUtil.addModuleToPom");
 		}
-		return "result";
+		return result;
 	}
 
 	/**
@@ -127,46 +154,53 @@ public class ParsePomUtil {
 	 * 
 	 * @author angw@primeton.com
 	 * @param param 携带g a v 和pom文件路径的的HashMap
-	 * @return
+	 * @return int   1:找不到文件   2:pom中已存在该module  0:添加成功  3:其他错误
 	 */
-	public String addDependency(HashMap<Object, Object> param) {
-		String result = "添加成功!";
+	public int addDependencyToPom(String pomPath,String groupId,String artifactId,String versionCode) {
+		logger.debug("start invoke PomUtil.addDependencyToPom");
+		int result = 0;
 		FileWriter pomFile = null;
 		FileInputStream fis = null;
+		
+		MavenXpp3Reader reader = null;
+		MavenXpp3Writer writer = null;
+		
 		try {
 			reader = new MavenXpp3Reader();
 			writer = new MavenXpp3Writer();
 
-			fis = new FileInputStream(param.get("pomPath").toString().replace("\\", "/"));
+			fis = new FileInputStream(pomPath.replace("\\", "/"));
 			Model model = reader.read(fis);
 			List<Dependency> dependencies = model.getDependencies();
 			// 先检索pom.xml中是否已经存在这一个依赖,如果存在，返回提示信息
 			for (Dependency dependency : dependencies) {
-				if (dependency.getGroupId().equals(param.get("groupId").toString())) {
-					return "已存在groupId为：" + dependency.getGroupId() + "的依赖！";
+				if (dependency.getGroupId().equals(groupId)) {
+					return 2;
 				}
 			}
 
 			Dependency depen = new Dependency();
-			depen.setGroupId(param.get("groupId").toString());
-			depen.setArtifactId(param.get("artifactId").toString());
-			depen.setVersion(param.get("versionCode").toString());
+			depen.setGroupId(groupId);
+			depen.setArtifactId(artifactId);
+			depen.setVersion(versionCode);
 			dependencies.add(depen);
 
 			model.setDependencies(dependencies);
 
-			pomFile = new FileWriter(param.get("pomPath").toString().replace("\\", "/"));
+			pomFile = new FileWriter(pomPath.replace("\\", "/"));
 			writer.write(pomFile, model);
 
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			result = "系统找不到指定路径";
+			String msg = String.format("File Not Found %s!", e.getMessage());
+			logger.error(msg);
+			result = 1;
 		} catch (Exception e) {
 			e.printStackTrace();
-			result = "添加失败";
+			result = 3;
 		} finally {
 			IOUtils.closeQuietly(pomFile);
 			IOUtils.closeQuietly(fis);
+			logger.debug("finish invoke PomUtil.addDependencyToPom");
 		}
 		return result;
 	}
@@ -176,46 +210,52 @@ public class ParsePomUtil {
 	 * 
 	 * @author angw@primmeton.com
 	 * @param param param 携带g a v 和pom文件路径的的HashMap
-	 * @return String
+	 * @return int   1:找不到文件   2:pom中不包含此dependency  0:添加成功  3:其他错误
 	 */
-	public String updateDependency(HashMap<Object, Object> param) {
-		String result = "修改成功!";
+	public int updateDependencyFromPom(String pomPath,String groupId,String artifactId,String versionCode) {
+		logger.debug("start invoke PomUtil.updateDependencyFromPom");
+		int result = 0;
 		boolean containDependency = false;
 		FileWriter pomFile = null;
 		FileInputStream fis = null;
+		
+		MavenXpp3Reader reader = null;
+		MavenXpp3Writer writer = null;
+		
 		try {
 			reader = new MavenXpp3Reader();
 			writer = new MavenXpp3Writer();
-			fis = new FileInputStream(param.get("pomPath").toString().replace("\\", "/"));
+			fis = new FileInputStream(pomPath.replace("\\", "/"));
 			Model model = reader.read(fis);
 			List<Dependency> dependencies = model.getDependencies();
 			// 在pom文件中搜索要修改的那一条<dependency>
 			for (Dependency dependency : dependencies) {
-				if (dependency.getGroupId().equals(param.get("groupId").toString())) {
+				if (dependency.getGroupId().equals(groupId.toString())) {
 					containDependency = true;
-					dependency.setArtifactId(param.get("artifactId").toString());
-					dependency.setVersion(param.get("versionCode").toString());
+					dependency.setArtifactId(artifactId.toString());
+					dependency.setVersion(versionCode.toString());
 				}
 			}
-		   
+
 			if (containDependency == false) {
-				result = "pom中不包含所需的dependency！";
+				result = 2;
 				return result;
 			}
 			model.setDependencies(dependencies);
 
-			pomFile = new FileWriter(param.get("pomPath").toString().replace("\\", "/"));
+			pomFile = new FileWriter(pomPath.replace("\\", "/"));
 			writer.write(pomFile, model);
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			result = "系统找不到指定路径";
+			result = 1;
 		} catch (Exception e) {
 			e.printStackTrace();
-			result = "修改失败";
+			result = 3;
 		} finally {
 			IOUtils.closeQuietly(pomFile);
 			IOUtils.closeQuietly(fis);
+			logger.debug("finish invoke PomUtil.updateDependencyFromPom");
 		}
 		return result;
 	}

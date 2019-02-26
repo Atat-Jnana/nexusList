@@ -1,4 +1,4 @@
-package com.primeton.nexus.nexusList.util;
+package com.primeton.nexus.nexusList.utils;
 
 import java.net.URL;
 import java.util.ArrayList;

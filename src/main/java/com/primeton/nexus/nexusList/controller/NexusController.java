@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.maven.model.Dependency;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,10 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.primeton.nexus.nexusList.bean.Artifact;
-import com.primeton.nexus.nexusList.util.ExcuteMavenUtil;
-import com.primeton.nexus.nexusList.util.ParseHtmlUtil;
-import com.primeton.nexus.nexusList.util.ParseJarUtil;
-import com.primeton.nexus.nexusList.util.ParsePomUtil;
+import com.primeton.nexus.nexusList.utils.MavenInvokeUtil;
+import com.primeton.nexus.nexusList.utils.NexusInfoUtil;
+import com.primeton.nexus.nexusList.utils.ParseJarUtil;
+import com.primeton.nexus.nexusList.utils.PomUtil;
 
 /**
  * 对nexus进行操作的接口
@@ -31,16 +32,16 @@ import com.primeton.nexus.nexusList.util.ParsePomUtil;
 public class NexusController {
 
 	@Autowired
-	private ParseHtmlUtil parseHtmlUtil;
+	private NexusInfoUtil parseHtmlUtil;
 
 	@Autowired
 	private ParseJarUtil parseJarUtil;
 
 	@Autowired
-	private ExcuteMavenUtil excuteMavenUtil;
-	
-	@Autowired 
-	private ParsePomUtil parsePomUtil;
+	private MavenInvokeUtil excuteMavenUtil;
+
+	@Autowired
+	private PomUtil parsePomUtil;
 
 	/**
 	 * 通过repositoryId查询其下的所有artifact
@@ -51,7 +52,7 @@ public class NexusController {
 	 */
 	@PostMapping("/getAllFromRepository")
 	public List<String> getAllFromRepository(@RequestBody Artifact artifact) {
-		return parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId());
+		return parseHtmlUtil.parseRepositoryBody(artifact.getRepositoryId());
 	}
 
 	/**
@@ -64,28 +65,23 @@ public class NexusController {
 	@PostMapping("/getByCondition")
 	public List<?> getArtifactByCondition(@RequestBody Artifact artifact) {
 		List<?> artifacts = null;
-		//通过repositoryId获取库中所有扩展
-		if(artifact.getRepositoryId()!=null&&artifact.getGroupId()== null && artifact.getArtifactId() == null
-				&& artifact.getVersionCode() == null) {
-			artifacts = parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId());
-		}
 		// 通过repositoryId+groupId获取所有artifactId
 		if (artifact.getRepositoryId() != null && artifact.getGroupId() != null && artifact.getArtifactId() == null
 				&& artifact.getVersionCode() == null) {
-			artifacts = parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId(), artifact.getGroupId());
+			artifacts = parseHtmlUtil.parseGroupBody(artifact.getRepositoryId(), artifact.getGroupId());
 			return artifacts;
 		}
 		// repositoryId+groupId+artifactId获取所有version
 		if (artifact.getRepositoryId() != null && artifact.getGroupId() != null && artifact.getArtifactId() != null
 				&& artifact.getVersionCode() == null) {
-			artifacts = parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId(), artifact.getGroupId(),
+			artifacts = parseHtmlUtil.parseArtifactBody(artifact.getRepositoryId(), artifact.getGroupId(),
 					artifact.getArtifactId());
 			return artifacts;
 		}
 		// repositoryId+groupId+artifactId+version获取具体jar包
 		if (artifact.getRepositoryId() != null && artifact.getGroupId() != null && artifact.getArtifactId() != null
 				&& artifact.getVersionCode() != null) {
-			artifacts = parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId(), artifact.getGroupId(),
+			artifacts = parseHtmlUtil.parseVersionBody(artifact.getRepositoryId(), artifact.getGroupId(),
 					artifact.getArtifactId(), artifact.getVersionCode());
 			return artifacts;
 		}
@@ -111,7 +107,7 @@ public class NexusController {
 			return result;
 		}
 		// result中存储有jar包的文件名
-		result = parseHtmlUtil.parseHtmlBody(artifact.getRepositoryId(), artifact.getGroupId(),
+		result = parseHtmlUtil.parseVersionBody(artifact.getRepositoryId(), artifact.getGroupId(),
 				artifact.getArtifactId(), artifact.getVersionCode());
 		// 如果字段虽然完整，但其中有填错的信息
 		if (result.get(0).toString().equals("找不到此版本信息!"))
@@ -132,7 +128,7 @@ public class NexusController {
 	 */
 	@PostMapping("/getDependency")
 	public List getDependencyFromPom(@RequestParam String pomPath) {
-		List<Object> jarInfo = parsePomUtil.getJarInfo(pomPath);
+		List<Dependency> jarInfo = parsePomUtil.getAllDependenciesFromPom(pomPath);
 		return jarInfo;
 	}
 
@@ -144,10 +140,10 @@ public class NexusController {
 	 * @param moduleName 所要添加的module名称
 	 * @return String "添加失败！"(失败) "添加成功！"(成功)
 	 */
-	@PostMapping("/addMoudle")
-	public String addModuleToPom(@RequestParam String pomPath, @RequestParam String moduleName) {
-		String result = "添加失败!";
-		result = parsePomUtil.addMoudle(pomPath, moduleName);
+	@PostMapping("/addModule")
+	public int addModuleToPom(@RequestParam String pomPath, @RequestParam String moduleName) {
+		int result = 0;
+		result = parsePomUtil.addModuleToPom(pomPath, moduleName);
 		return result;
 	}
 
@@ -159,9 +155,11 @@ public class NexusController {
 	 * @return String
 	 */
 	@PostMapping("/addDependency")
-	public String addDependencyToPom(@RequestBody HashMap<Object, Object> pom_artifact) {
-		String result = "添加失败！";
-		result = parsePomUtil.addDependency(pom_artifact);
+	public int addDependencyToPom(@RequestBody HashMap<Object, Object> pom_artifact) {
+		int result = 0;
+		result = parsePomUtil.addDependencyToPom(pom_artifact.get("pomPath").toString(),
+				pom_artifact.get("groupId").toString(), pom_artifact.get("artifactId").toString(),
+				pom_artifact.get("versionCode").toString());
 		return result;
 	}
 
@@ -173,9 +171,11 @@ public class NexusController {
 	 * @return String
 	 */
 	@PostMapping("/updateDependency")
-	public String updateDependencyToPom(@RequestBody HashMap<Object, Object> pom_artifact) {
-		String result = "修改失败!";
-		result = parsePomUtil.updateDependency(pom_artifact);
+	public int updateDependencyToPom(@RequestBody HashMap<Object, Object> pom_artifact) {
+		int result = 0;
+		result = parsePomUtil.updateDependencyFromPom(pom_artifact.get("pomPath").toString(),
+				pom_artifact.get("groupId").toString(), pom_artifact.get("artifactId").toString(),
+				pom_artifact.get("versionCode").toString());
 		return result;
 	}
 
@@ -187,9 +187,9 @@ public class NexusController {
 	 * @return String
 	 */
 	@PostMapping("/compilePom")
-	public String excuteMavenCompile(@RequestParam String pomPath) {
-		String result = "编译失败!";
-		result = excuteMavenUtil.mavenCompile(pomPath);
+	public int excuteMavenCompile(@RequestParam String pomPath) {
+		int result;
+		result = excuteMavenUtil.compile(pomPath);
 		return result;
 
 	}
