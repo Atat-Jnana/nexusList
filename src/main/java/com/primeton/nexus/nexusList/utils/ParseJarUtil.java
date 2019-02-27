@@ -53,7 +53,7 @@ public class ParseJarUtil {
 	 */
 	public List<Object> getJarInfo(Artifact artifact, String jarName) {
 		List<Object> result = new ArrayList<>();
-		Map<Object, Object> jarInfo = new HashMap<>();
+		Map<Object, Object> jarInfo = new HashMap<Object, Object>();
 		// 拼接出jar文件中pom.xml文件的路径
 		String path = "jar:file:/" + localRepoPath.replace("\\", "/") + artifact.getGroupId().replace(".", "/") + "/"
 				+ jarName + "!/META-INF/maven/" + artifact.getGroupId() + "/" + artifact.getArtifactId() + "/pom.xml";
